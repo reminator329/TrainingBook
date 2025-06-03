@@ -56,4 +56,6 @@ jobs:
           poetry env use python3.11
           poetry install --no-root
           pkill -f "poetry run python main_training_bot.py" || true
-          nohup poetry run python main_training_bot.py "${{ secrets.BOT_TOKEN }}" > bot.log 2>&1 &
+          echo "nohup poetry run python main_training_bot.py "${{ secrets.BOT_TOKEN }}" > bot.log 2>&1" >> run.sh
+          chmod 700 /TrainingBook/run.sh
+          ./run.sh &
