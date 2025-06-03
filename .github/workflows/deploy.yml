@@ -50,7 +50,7 @@ jobs:
         port: 22
         script: |
           set -e
-          tar xzf ~/TrainingBook/package.tar.gz -C /TrainingBook/ --strip-components=1
+          tar xzf /TrainingBook/package.tar.gz -C /TrainingBook/ --strip-components=1
           cd /TrainingBook/
           poetry install --no-root
           pkill -f "poetry run python main_training_bot.py" || true
