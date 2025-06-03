@@ -29,6 +29,7 @@ jobs:
       run: |
         cp -r . deploy_package/ || true
         rm -rf deploy_package/.*
+        rm deploy_package/poetry.lock || true
         tar czf package.tar.gz -C deploy_package .
 
     - name: Upload to server via SCP
@@ -52,6 +53,7 @@ jobs:
           set -e
           tar xzf /TrainingBook/package.tar.gz -C /TrainingBook/ --strip-components=1
           cd /TrainingBook/
+          poetry env use python3.11
           poetry install --no-root
           pkill -f "poetry run python main_training_bot.py" || true
           nohup poetry run python main_training_bot.py "${{ secrets.BOT_TOKEN }}" > bot.log 2>&1 &
