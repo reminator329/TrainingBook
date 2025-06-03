@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "trainingbook"
+version = "0.1.0"
+description = ""
+authors = ["reminator <rlaborie2000@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+poetry-core = "^2.1.3"
+"discord.py" = {version = "^2.5.2", extras = ["voice"]}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,57 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies
+      run: poetry install --no-root
+
+    - name: Build deployment package
+      run: |
+        cp -r . deploy_package/
+        rm -rf deploy_package/.*
+        tar czf package.tar.gz -C deploy_package .
+
+    - name: Upload to server via SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        source: "package.tar.gz"
+        target: "/TrainingBook/"
+
+    - name: Connect via SSH and extract
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          set -e
+          tar xzf ~/TrainingBook/package.tar.gz -C /TrainingBook/ --strip-components=1
+          cd /TrainingBook/
+          poetry install --no-root
+          pkill -f "poetry run python main_training_bot.py" || true
+          nohup poetry run python main_training_bot.py "${{ secrets.BOT_TOKEN }}" > bot.log 2>&1 &
