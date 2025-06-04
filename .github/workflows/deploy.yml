@@ -56,4 +56,4 @@ jobs:
           cd /TrainingBook/
           tar xzf package.tar.gz -C . --strip-components=1
           pkill -f "poetry run python main_training_bot.py" || true
-          ./run.sh &
+          nohup ./run.sh &
