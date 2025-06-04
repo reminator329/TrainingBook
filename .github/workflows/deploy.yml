@@ -52,7 +52,7 @@ jobs:
         script: |
           set -e
           cd /TrainingBook/
-          echo "poetry env use python3.11 ; poetry install --no-root ; poetry run python main_training_bot.py --token \"${{ secrets.BOT_TOKEN }}\" > bot.log 2>&1" >> run.sh
+          echo "poetry env use python3.11 ; poetry install --no-root ; poetry run python main_training_bot.py --token \"${{ secrets.BOT_TOKEN }}\" > bot.log 2>&1" > run.sh
           chmod 700 /TrainingBook/run.sh
           tar xzf package.tar.gz -C . --strip-components=1
           pkill -f "poetry run python main_training_bot.py" || true
