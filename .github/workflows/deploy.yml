@@ -30,7 +30,7 @@ jobs:
         cp -r . deploy_package/ || true
         rm -rf deploy_package/.*
         rm deploy_package/poetry.lock || true
-        echo "poetry env use python3.11 ; poetry install --no-root ; poetry run python main_training_bot.py --token \"${{ secrets.BOT_TOKEN }}\" > bot.log 2>&1" > deploy_package/run.sh
+        echo "poetry env use python3.11 ; poetry install --no-root ; sudo systemctl restart trainingbot > bot.log 2>&1" > deploy_package/run.sh
         chmod 777 deploy_package/run.sh
         tar czf package.tar.gz -C deploy_package .
 
@@ -52,8 +52,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          set -e
           cd /TrainingBook/
           tar xzf package.tar.gz -C . --strip-components=1
           pkill -f "poetry run python main_training_bot.py" || true
-          nohup ./run.sh &
+          ./run.sh &
