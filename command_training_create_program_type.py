@@ -47,7 +47,6 @@ class ExerciseSelect(ui.Select):
         ]
         super().__init__(placeholder="Ajouter un exercice.", min_values=1, max_values=1, options=options)
         self.exercises = {e.name: e for e in exercises}
-        self.callback_executed = False
 
     async def callback(self, interaction: discord.Interaction):
         response = interaction.response
@@ -67,7 +66,12 @@ class ExerciseSelect(ui.Select):
                 f"Ajouté : **{selected_exercise}** avec {modal.result}s de repos.",
                 ephemeral=True
             )
-        self.callback_executed = True
+
+            view.remove_item(self)
+            new_select = ExerciseSelect(list(view.exercises_available.values()))
+            view.select = new_select
+            view.add_item(new_select)
+            await interaction.message.edit(view=view)
 
 
 
