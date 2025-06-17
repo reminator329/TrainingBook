@@ -7,6 +7,11 @@ class ExerciseTemplate(JsonSerializable):
     def __init__(self, name: str = None):
         self.name = name
 
+    def __lt__(self, other):
+        if not isinstance(other, ExerciseTemplate):
+            return False
+        return self.name < other.name
+
 
 class ExerciseProgram(JsonSerializable):
 

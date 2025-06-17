@@ -64,6 +64,7 @@ class JsonStorage(StorageInterface):
         for exerciseType_json in self.data["exercisesTemplate"]:
             print(str(exerciseType_json))
             exercise_types.append(datamodel.ExerciseTemplate.load(exerciseType_json))
+        exercise_types.sort()
         return exercise_types
 
     def add_exercise_template(self, exercise_template: datamodel.ExerciseTemplate):
