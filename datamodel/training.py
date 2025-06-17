@@ -1,5 +1,7 @@
 from datetime import datetime
-from metamodel import *
+
+from .metamodel import *
+
 
 class ExerciseTemplate(JsonSerializable):
     def __init__(self, name: str = None):
@@ -14,8 +16,8 @@ class ExerciseProgram(JsonSerializable):
 
 
 class Exercise(JsonSerializable):
-    def __init__(self, exercise: ExerciseTemplate = None, weight: float = None, reps: int = None):
-        self.exercise = exercise
+    def __init__(self, exercise_program: ExerciseProgram = None, weight: float = None, reps: int = None):
+        self.exercise_program = exercise_program
         self.weight = weight
         self.reps = reps
 
@@ -23,10 +25,10 @@ class Exercise(JsonSerializable):
 class ProgramTemplate(JsonSerializable):
     def __init__(self, name: str = None):
         self.name = name
-        self.exercises: list[ExerciseProgram] = []  # (exercise, rest_time_seconds)
+        self.exercise_programs: list[ExerciseProgram] = []  # (exercise, rest_time_seconds)
 
-    def add_exercise(self, exercise_program: ExerciseProgram):
-        self.exercises.append(exercise_program)
+    def add_exercise_program(self, exercise_program: ExerciseProgram):
+        self.exercise_programs.append(exercise_program)
 
 
 class Program(JsonSerializable):
@@ -34,3 +36,35 @@ class Program(JsonSerializable):
         self.template = template
         self.date = date
         self.results: list[Exercise] = []
+
+    def add_exercise_result(self, exercise: Exercise) -> str | None:
+
+        given_exercise_program = exercise.exercise_program
+
+        if given_exercise_program not in self.template.exercise_programs:
+            return "Error : The exercise_program of this exercise " + str(exercise) + " is not in this program."
+
+        if given_exercise_program in [exercise_result.exercise_program for exercise_result in self.results]:
+            return "Error : The exercise_program of this exercise " + str(exercise) + " is already done."
+
+        self.results.append(exercise)
+        return None
+
+    def is_program_invalid_according_exercise_programs(self) -> bool:
+        for exercise_result in self.results:
+            if exercise_result.exercise_program not in self.template.exercise_programs:
+                return True
+
+        return False
+
+    def is_program_completed(self) -> bool:
+        if len(self.results) != len(self.template.exercise_programs):
+            return False
+
+        for exercise in self.results:
+            if exercise.exercise_program not in self.template.exercise_programs:
+                if self.is_program_invalid_according_exercise_programs():
+                    print("Warning : This program is not valid.")
+                return False
+
+        return True
