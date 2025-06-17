@@ -12,6 +12,8 @@ from command_graph import CommandGraph
 from command_hello import CommandHello
 from command_shop import CommandShop
 from command_tictactoe import CommandTicTacToe
+from command_training_create_exercise_template import CommandTrainingCreateExerciseTemplate
+from command_training_create_program_type import CommandTrainingCreateProgramType
 
 MY_GUILD = discord.Object(id=1379158112862212167)  # replace with your guild id
 
@@ -41,7 +43,9 @@ class MyClient(discord.Client):
             CommandGraph(),
             CommandFeedback(),
             CommandGoogle(),
-            CommandTicTacToe()
+            CommandTicTacToe(),
+            CommandTrainingCreateExerciseTemplate(),
+            CommandTrainingCreateProgramType()
         }
 
         for command in commands:
