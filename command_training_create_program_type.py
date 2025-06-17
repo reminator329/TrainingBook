@@ -73,7 +73,7 @@ class ExerciseSelect(ui.Select):
 
 class ProgramBuilderView(ui.View):
     def __init__(self, user: discord.User, new_program: datamodel.ProgramTemplate, exercises: list[datamodel.ExerciseTemplate]):
-        super().__init__(timeout=None)
+        super().__init__(timeout=3600)
         self.user = user
         self.new_program = new_program
         self.exercises_available = {e.name: e for e in exercises}
@@ -94,6 +94,13 @@ class ProgramBuilderView(ui.View):
         self.finished = True
         self.stop()
         await response.send_message("Programme terminé et enregistré !", ephemeral=True)
+
+    async def on_timeout(self):
+        print("ProgramBuilderView timed out")
+        for child in self.children:
+            child.disabled = True
+
+        self.stop()
 
 
 async def execute(interaction: discord.Interaction):
