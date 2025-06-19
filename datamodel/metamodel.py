@@ -1,8 +1,19 @@
 import importlib
 import json
 
+import bson
+
+
+def generate_id():
+    return str(bson.ObjectId())
+
 
 class JsonSerializable:
+
+    def __init__(self, _id: str=None):
+
+        self.id: str = _id if _id is not None else generate_id()
+
     def dumps(self) -> str:
         return json.dumps(self.dump())
 
@@ -31,7 +42,6 @@ class JsonSerializable:
         if not class_name or not module_name:
             raise ValueError("Missing _class or _module in JSON")
 
-        # Import dynamique
         module = importlib.import_module(module_name)
         target_cls = getattr(module, class_name)
 
@@ -59,7 +69,6 @@ class JsonSerializable:
         if not class_name or not module_name:
             raise ValueError("Missing _class or _module in JSON")
 
-        # Import dynamique
         module = importlib.import_module(module_name)
         target_cls = getattr(module, class_name)
 
