@@ -14,6 +14,33 @@ class JsonSerializable:
 
         self.id: str = _id if _id is not None else generate_id()
 
+    def populate(self, hashmap: dict):
+
+        for key, value in self.__dict__.items():
+            if isinstance(value, JsonSerializable):
+                if value.id in hashmap:
+                    value = hashmap[value.id]
+                else:
+                    value.populate(hashmap)
+
+            if isinstance(value, str):
+                if value in hashmap:
+                    value = hashmap[value]
+
+            if isinstance(value, list):
+                for v in value:
+                    if isinstance(v, JsonSerializable):
+                        if value.id in hashmap:
+                            value = hashmap[value.id]
+                        else:
+                            v.populate(hashmap)
+
+                    if isinstance(value, str):
+                        if value in hashmap:
+                            value = hashmap[value]
+
+
+
     def dumps(self) -> str:
         return json.dumps(self.dump())
 
