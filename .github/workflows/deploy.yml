@@ -52,5 +52,6 @@ jobs:
         script: |
           cd /TrainingBook/
           tar xzf package.tar.gz -C . --strip-components=1
+          /home/ubuntu/.local/bin/poetry lock
           /home/ubuntu/.local/bin/poetry install --no-root
           sudo systemctl restart trainingbot
