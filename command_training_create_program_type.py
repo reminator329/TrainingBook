@@ -40,7 +40,7 @@ class RestTimeModal(ui.Modal, title="Temps de repos"):
             await response.send_message("Veuillez entrer un nombre entier valide.", ephemeral=True)
 
 class ExerciseSelect(ui.Select):
-    def __init__(self, exercises: list[datamodel.ExerciseTemplate]):
+    def __init__(self, exercises: list[datamodel.ExerciseType]):
         options = [
             discord.SelectOption(label=ex.name, value=ex.name)
             for ex in exercises
@@ -76,7 +76,7 @@ class ExerciseSelect(ui.Select):
 
 
 class ProgramBuilderView(ui.View):
-    def __init__(self, user: discord.User, new_program: datamodel.ProgramTemplate, exercises: list[datamodel.ExerciseTemplate]):
+    def __init__(self, user: discord.User, new_program: datamodel.ProgramType, exercises: list[datamodel.ExerciseType]):
         super().__init__(timeout=3600)
         self.user = user
         self.new_program = new_program
@@ -122,7 +122,7 @@ async def execute(interaction: discord.Interaction):
         await channel.send("Nom du programme invalide.")
         return
 
-    new_program = datamodel.ProgramTemplate(
+    new_program = datamodel.ProgramType(
         name=program_name
     )
 
@@ -136,7 +136,14 @@ async def execute(interaction: discord.Interaction):
     await view.wait()
 
     if view.finished:
-        bdd.add_program_type(new_program)
+
+        member = interaction.user
+        assert isinstance(member, discord.Member)
+
+        user = datamodel.User(member.id, member.mention)
+
+        bdd = storage.get_storage()
+        bdd.upcreate_program_type_and_add_to_user(user, new_program)
     else:
         await channel.send("Création annulée ou expirée.", ephemeral=True)
 

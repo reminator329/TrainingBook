@@ -3,20 +3,20 @@ from datetime import datetime
 from .metamodel import *
 
 
-class ExerciseTemplate(JsonSerializable):
+class ExerciseType(JsonSerializable):
     def __init__(self, name: str = None):
         super().__init__()
         self.name = name
 
     def __lt__(self, other):
-        if not isinstance(other, ExerciseTemplate):
+        if not isinstance(other, ExerciseType):
             return False
         return self.name < other.name
 
 
 class ExerciseProgram(JsonSerializable):
 
-    def __init__(self, exercise_template: ExerciseTemplate, rest_time_seconds: int):
+    def __init__(self, exercise_template: ExerciseType, rest_time_seconds: int):
         super().__init__()
         self.exerciseTemplate = exercise_template
         self.restTimeSeconds = rest_time_seconds
@@ -30,7 +30,7 @@ class Exercise(JsonSerializable):
         self.reps = reps
 
 
-class ProgramTemplate(JsonSerializable):
+class ProgramType(JsonSerializable):
     def __init__(self, name: str = None):
         super().__init__()
         self.name = name
@@ -41,7 +41,7 @@ class ProgramTemplate(JsonSerializable):
 
 
 class Program(JsonSerializable):
-    def __init__(self, template: ProgramTemplate = None, date: datetime = None):
+    def __init__(self, template: ProgramType = None, date: datetime = None):
         super().__init__()
         self.template = template
         self.date = date

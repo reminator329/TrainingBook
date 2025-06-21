@@ -25,21 +25,24 @@ class AddExerciseModal(discord.ui.Modal):
         response = interaction.response
         assert isinstance(response, discord.InteractionResponse)
 
+        member = interaction.user
+        assert isinstance(member, discord.Member)
+
         exercise_name = self.exercise_name.value.strip()
 
-        exercise = datamodel.ExerciseTemplate(exercise_name)
+        user = datamodel.User(member.id, member.mention)
+        exercise = datamodel.ExerciseType(exercise_name)
 
         bdd = storage.get_storage()
-        bdd.add_exercise_template(exercise)
+        bdd.upcreate_exercise_template_and_add_to_user(user, exercise)
 
-        await response.send_message("Exercice ajouté : **" + str(exercise) + "** !", ephemeral=False)
+        await response.send_message(user.mention + " Exercice ajouté : **" + str(exercise) + "** !", ephemeral=False)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         response = interaction.response
         assert isinstance(response, discord.InteractionResponse)
         await response.send_message('Oops! Something went wrong.', ephemeral=False)
 
-        # Make sure we know what the error actually is
         traceback.print_exception(type(error), error, error.__traceback__)
 
 async def execute(interaction: discord.Interaction):

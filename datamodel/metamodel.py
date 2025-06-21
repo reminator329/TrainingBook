@@ -45,7 +45,11 @@ class JsonSerializable:
         return json.dumps(self.dump())
 
     def dump(self) -> dict:
-        data = {}
+        data: dict[str, str | dict | list] = {
+            "_class": self.__class__.__name__,
+            "_module": self.__class__.__module__
+        }
+
         for key, value in self.__dict__.items():
             if isinstance(value, JsonSerializable):
                 data[key] = value.dump()
@@ -56,16 +60,13 @@ class JsonSerializable:
                 ]
             else:
                 data[key] = value
-
-        data["_class"] = self.__class__.__name__
-        data["_module"] = self.__class__.__module__
         return data
 
     @classmethod
     def loads(cls, json_str: str) -> 'JsonSerializable':
         raw = json.loads(json_str)
-        class_name = raw.pop("_class", None)
-        module_name = raw.pop("_module", None)
+        class_name = raw.pop("_class")
+        module_name = raw.pop("_module")
         if not class_name or not module_name:
             raise ValueError("Missing _class or _module in JSON")
 
@@ -91,8 +92,8 @@ class JsonSerializable:
     @classmethod
     def load(cls, dict_input: dict) -> 'JsonSerializable':
         raw = dict_input.copy()
-        class_name = raw.pop("_class", None)
-        module_name = raw.pop("_module", None)
+        class_name = raw.pop("_class")
+        module_name = raw.pop("_module")
         if not class_name or not module_name:
             raise ValueError("Missing _class or _module in JSON")
 

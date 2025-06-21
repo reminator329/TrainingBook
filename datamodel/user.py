@@ -1,4 +1,3 @@
-from .metamodel import *
 from .training import *
 
 class User(JsonSerializable):
@@ -8,4 +7,5 @@ class User(JsonSerializable):
 
         self.userId = user_id
         self.mention = mention
-        self.exerciseTemplates: list[ExerciseTemplate] = []
+        self.exerciseTypes: list[ExerciseType] = []
+        self.programTypes: list[ProgramType] = []
