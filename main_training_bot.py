@@ -13,7 +13,8 @@ from command_hello import CommandHello
 from command_shop import CommandShop
 from command_tictactoe import CommandTicTacToe
 from command_training_create_exercise_template import CommandTrainingCreateExerciseTemplate
-from command_training_create_program_type import CommandTrainingCreateProgramType
+from command_training_create_program_type import CommandTrainingCreateProgram
+from command_training_create_session import CommandTrainingCreateSession
 
 MY_GUILD = discord.Object(id=1379158112862212167)  # replace with your guild id
 
@@ -32,8 +33,6 @@ class MyClient(discord.Client):
 
 
 
-
-
         self.tree = app_commands.CommandTree(self)
         commands = {
             CommandHello(),
@@ -45,7 +44,8 @@ class MyClient(discord.Client):
             CommandGoogle(),
             CommandTicTacToe(),
             CommandTrainingCreateExerciseTemplate(),
-            CommandTrainingCreateProgramType()
+            CommandTrainingCreateProgram(),
+            CommandTrainingCreateSession()
         }
 
         for command in commands:

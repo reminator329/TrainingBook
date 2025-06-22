@@ -8,5 +8,5 @@ class User(JsonSerializable):
         self.userId = user_id
         self.mention = mention
         self.exerciseTypes: list[ExerciseType] = []
-        self.programTypes: list[ProgramType] = []
+        self.programTypes: list[Program] = []
         self.sessions: list[Session] = []

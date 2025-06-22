@@ -76,7 +76,7 @@ class ExerciseSelect(ui.Select):
 
 
 class ProgramBuilderView(ui.View):
-    def __init__(self, user: discord.User, new_program: datamodel.ProgramType, exercises: list[datamodel.ExerciseType]):
+    def __init__(self, user: discord.User, new_program: datamodel.Program, exercises: list[datamodel.ExerciseType]):
         super().__init__(timeout=3600)
         self.user = user
         self.new_program = new_program
@@ -112,6 +112,13 @@ async def execute(interaction: discord.Interaction):
     assert isinstance(response, discord.InteractionResponse)
     channel = interaction.channel
 
+    bdd = storage.get_storage()
+    exercise_types = bdd.get_exercises_template()
+
+    if not exercise_types:
+        await response.send_message("⚠️ Aucun excercice type trouvé.", ephemeral=True)
+        return
+
     # Étape 1 : entrer le nom du programme
     modal = ProgramNameModal()
     await response.send_modal(modal)
@@ -122,13 +129,11 @@ async def execute(interaction: discord.Interaction):
         await channel.send("Nom du programme invalide.")
         return
 
-    new_program = datamodel.ProgramType(
+    new_program = datamodel.Program(
         name=program_name
     )
 
     # Étape 2 : créer la view pour ajouter les exercices
-    bdd = storage.get_storage()
-    exercise_types = bdd.get_exercises_template()
 
     view = ProgramBuilderView(interaction.user, new_program, exercise_types)
     await channel.send(f"Ajoutons des exercices au programme **{program_name}** :", view=view)
@@ -147,7 +152,7 @@ async def execute(interaction: discord.Interaction):
     else:
         await channel.send("Création annulée ou expirée.", ephemeral=True)
 
-class CommandTrainingCreateProgramType(command.Command):
+class CommandTrainingCreateProgram(command.Command):
 
     def __init__(self):
-        super().__init__("create-program-type", "Save a new programme type", execute)
+        super().__init__("create-program", "Save a new programme", execute)

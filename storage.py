@@ -13,12 +13,16 @@ class StorageInterface(ABC):
         pass
 
     @abstractmethod
+    def get_programs(self) -> List[datamodel.Program]:
+        pass
+
+    @abstractmethod
     def upcreate_exercise_template_and_add_to_user(self, user: datamodel.User,
                                                    exercise: datamodel.ExerciseType) -> None:
         pass
 
     @abstractmethod
-    def upcreate_program_type_and_add_to_user(self, user: datamodel.User, program_type: datamodel.ProgramType) -> None:
+    def upcreate_program_type_and_add_to_user(self, user: datamodel.User, program_type: datamodel.Program) -> None:
         pass
 
     @abstractmethod
@@ -31,7 +35,7 @@ class JsonStorage(StorageInterface):
     _instance: 'JsonStorage' = None
 
     DB_KEY_EXERCISE_TYPES = "exerciseTypes"
-    DB_KEY_PROGRAM_TYPES = "programTypes"
+    DB_KEY_PROGRAMS = "programs"
     DB_KEY_USERS = "users"
     DB_KEY_SESSIONS = "sessions"
 
@@ -46,7 +50,7 @@ class JsonStorage(StorageInterface):
         self.path = path
         self.data: dict = {
             JsonStorage.DB_KEY_EXERCISE_TYPES: [],
-            JsonStorage.DB_KEY_PROGRAM_TYPES: [],
+            JsonStorage.DB_KEY_PROGRAMS: [],
             JsonStorage.DB_KEY_USERS: [],
             JsonStorage.DB_KEY_SESSIONS: []
         }
@@ -93,6 +97,14 @@ class JsonStorage(StorageInterface):
         exercise_types.sort()
         return exercise_types
 
+    def get_programs(self) -> List[datamodel.Program]:
+        programs = []
+        for program in self.data[JsonStorage.DB_KEY_PROGRAMS]:
+            assert isinstance(program, datamodel.Program)
+            programs.append(datamodel.Program.load(program.dump()))
+        programs.sort()
+        return programs
+
     def get_user_from_user_id(self, user_id: int) -> datamodel.User:
         user = None
         for user in self.data[JsonStorage.DB_KEY_USERS]:
@@ -128,8 +140,8 @@ class JsonStorage(StorageInterface):
         user_in_db.exerciseTypes.append(exercise_template)
         self.upcreate_user(user_in_db)
 
-    def upcreate_program_type_and_add_to_user(self, user: datamodel.User, program_type: datamodel.ProgramType) -> None:
-        self.upcreate_json_serializable(program_type, JsonStorage.DB_KEY_PROGRAM_TYPES)
+    def upcreate_program_type_and_add_to_user(self, user: datamodel.User, program_type: datamodel.Program) -> None:
+        self.upcreate_json_serializable(program_type, JsonStorage.DB_KEY_PROGRAMS)
 
         user_in_db = self.get_user_from_user_id(user.userId)
         if user_in_db is None:

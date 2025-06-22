@@ -28,16 +28,17 @@ class JsonSerializable:
                     value = hashmap[value]
 
             if isinstance(value, list):
+                new_list = []
                 for v in value:
                     if isinstance(v, JsonSerializable):
-                        if value.id in hashmap:
-                            value = hashmap[value.id]
-                        else:
+                        if v.id not in hashmap:
                             v.populate(hashmap)
+                        new_list.append(hashmap[v.id])
 
-                    if isinstance(value, str):
-                        if value in hashmap:
-                            value = hashmap[value]
+                    if isinstance(v, str):
+                        if v in hashmap:
+                            new_list.append(hashmap[v])
+                self.__setattr__(key, new_list)
 
 
 

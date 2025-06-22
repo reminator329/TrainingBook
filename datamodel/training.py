@@ -30,7 +30,7 @@ class Exercise(JsonSerializable):
         self.reps = reps
 
 
-class ProgramType(JsonSerializable):
+class Program(JsonSerializable):
     def __init__(self, name: str = None):
         super().__init__()
         self.name = name
@@ -39,9 +39,14 @@ class ProgramType(JsonSerializable):
     def add_exercise_program(self, exercise_program: ExerciseProgram):
         self.exercisePrograms.append(exercise_program)
 
+    def __lt__(self, other):
+        if not isinstance(other, ExerciseType):
+            return False
+        return self.name < other.name
+
 
 class Session(JsonSerializable):
-    def __init__(self, template: ProgramType = None, date: datetime = None):
+    def __init__(self, template: Program = None, date: str = None):
         super().__init__()
         self.template = template
         self.date = date
