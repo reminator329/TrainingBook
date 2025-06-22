@@ -9,3 +9,4 @@ class User(JsonSerializable):
         self.mention = mention
         self.exerciseTypes: list[ExerciseType] = []
         self.programTypes: list[ProgramType] = []
+        self.sessions: list[Session] = []

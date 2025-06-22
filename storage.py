@@ -21,13 +21,19 @@ class StorageInterface(ABC):
     def upcreate_program_type_and_add_to_user(self, user: datamodel.User, program_type: datamodel.ProgramType) -> None:
         pass
 
+    @abstractmethod
+    def upcreate_session_and_add_to_user(self, user: datamodel.User, session: datamodel.Session) -> None:
+        pass
+
 
 class JsonStorage(StorageInterface):
+
     _instance: 'JsonStorage' = None
 
-    DB_KEY_EXERCISE_TEMPLATES = "exerciseTemplates"
-    DB_KEY_PROGRAM_TYPES = "programTemplates"
+    DB_KEY_EXERCISE_TYPES = "exerciseTypes"
+    DB_KEY_PROGRAM_TYPES = "programTypes"
     DB_KEY_USERS = "users"
+    DB_KEY_SESSIONS = "sessions"
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -39,9 +45,10 @@ class JsonStorage(StorageInterface):
             return
         self.path = path
         self.data: dict = {
-            JsonStorage.DB_KEY_EXERCISE_TEMPLATES: [],
+            JsonStorage.DB_KEY_EXERCISE_TYPES: [],
             JsonStorage.DB_KEY_PROGRAM_TYPES: [],
-            JsonStorage.DB_KEY_USERS: []
+            JsonStorage.DB_KEY_USERS: [],
+            JsonStorage.DB_KEY_SESSIONS: []
         }
         self.db_objects_by_id: dict = {}
         self._load()
@@ -79,7 +86,7 @@ class JsonStorage(StorageInterface):
 
     def get_exercises_template(self) -> List[datamodel.ExerciseType]:
         exercise_types = []
-        for exerciseType in self.data[JsonStorage.DB_KEY_EXERCISE_TEMPLATES]:
+        for exerciseType in self.data[JsonStorage.DB_KEY_EXERCISE_TYPES]:
             print(str(exerciseType))
             assert isinstance(exerciseType, datamodel.ExerciseType)
             exercise_types.append(datamodel.ExerciseType.load(exerciseType.dump()))
@@ -112,8 +119,7 @@ class JsonStorage(StorageInterface):
         self.upcreate_json_serializable(user, JsonStorage.DB_KEY_USERS)
 
     def upcreate_exercise_template_and_add_to_user(self, user: datamodel.User, exercise_template: datamodel.ExerciseType):
-        self.upcreate_json_serializable(user, JsonStorage.DB_KEY_USERS)
-        self.upcreate_json_serializable(exercise_template, JsonStorage.DB_KEY_EXERCISE_TEMPLATES)
+        self.upcreate_json_serializable(exercise_template, JsonStorage.DB_KEY_EXERCISE_TYPES)
 
         user_in_db = self.get_user_from_user_id(user.userId)
         if user_in_db is None:
@@ -123,7 +129,7 @@ class JsonStorage(StorageInterface):
         self.upcreate_user(user_in_db)
 
     def upcreate_program_type_and_add_to_user(self, user: datamodel.User, program_type: datamodel.ProgramType) -> None:
-        self.upcreate_json_serializable(user, JsonStorage.DB_KEY_USERS)
+        self.upcreate_json_serializable(program_type, JsonStorage.DB_KEY_PROGRAM_TYPES)
 
         user_in_db = self.get_user_from_user_id(user.userId)
         if user_in_db is None:
@@ -131,6 +137,17 @@ class JsonStorage(StorageInterface):
 
         user_in_db.programTypes.append(program_type)
         self.upcreate_user(user_in_db)
+
+    def upcreate_session_and_add_to_user(self, user: datamodel.User, session: datamodel.Session) -> None:
+        self.upcreate_json_serializable(session, JsonStorage.DB_KEY_SESSIONS)
+
+        user_in_db = self.get_user_from_user_id(user.userId)
+        if user_in_db is None:
+            user_in_db = user
+
+        user_in_db.sessions.append(session)
+        self.upcreate_user(user_in_db)
+
 
 
 def get_storage() -> StorageInterface:

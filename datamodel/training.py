@@ -40,7 +40,7 @@ class ProgramType(JsonSerializable):
         self.exercisePrograms.append(exercise_program)
 
 
-class Program(JsonSerializable):
+class Session(JsonSerializable):
     def __init__(self, template: ProgramType = None, date: datetime = None):
         super().__init__()
         self.template = template
