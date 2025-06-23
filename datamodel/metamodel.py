@@ -33,7 +33,9 @@ class JsonSerializable:
                     if isinstance(v, JsonSerializable):
                         if v.id not in hashmap:
                             v.populate(hashmap)
-                        new_list.append(hashmap[v.id])
+                            new_list.append(v)
+                        else:
+                            new_list.append(hashmap[v.id])
 
                     if isinstance(v, str):
                         if v in hashmap:
