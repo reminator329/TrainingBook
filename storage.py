@@ -29,6 +29,10 @@ class StorageInterface(ABC):
     def upcreate_session_and_add_to_user(self, user: datamodel.User, session: datamodel.Session) -> None:
         pass
 
+    @abstractmethod
+    def get_user_from_user_id(self, user_id: int) -> datamodel.User:
+        pass
+
 
 class JsonStorage(StorageInterface):
 

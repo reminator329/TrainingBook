@@ -6,7 +6,6 @@ import command
 import storage
 import datamodel
 
-
 class SessionInputModal(ui.Modal):
     def __init__(self, exercise_program: datamodel.ExerciseProgram):
         super().__init__(title=f"Saisie pour {exercise_program.exerciseTemplate.name}")
@@ -25,12 +24,37 @@ class SessionInputModal(ui.Modal):
         await response.defer()
 
 
+class DateInputModal(ui.Modal):
+    def __init__(self):
+        super().__init__(title="Date de la séance")
+        self.date_input = ui.TextInput(
+            label="Date de la séance (JJ/MM/AAAA)", placeholder="Par ex. : 22/06/2025", required=True
+        )
+        self.add_item(self.date_input)
+        self.result_date: str | None = None
+
+    async def on_submit(self, interaction: discord.Interaction):
+        response = interaction.response
+        assert isinstance(response, discord.InteractionResponse)
+
+        try:
+            # Validation simple du format
+            date_obj = datetime.strptime(self.date_input.value, "%d/%m/%Y")
+            self.result_date = date_obj.isoformat()
+            await response.defer()  # Pas de message visible
+        except ValueError:
+            await response.send_message("❌ Format de date invalide. Utilisez JJ/MM/AAAA.", ephemeral=True)
+
+        self.stop()
+
 class SessionInProgressView(ui.View):
-    def __init__(self, user: discord.User, program: datamodel.Program):
+    def __init__(self, user: discord.User, program: datamodel.Program, session_date: str):
         super().__init__(timeout=1800)
+
         self.user = user
         self.program = program
-        self.session = datamodel.Session(template=program, date=datetime.now().isoformat())
+        # self.session = datamodel.Session(template=program, date=datetime.now().isoformat())
+        self.session = datamodel.Session(template=program, date=session_date)
         self.index = 0
 
         self.next_button = ui.Button(label=self.get_button_label(), style=discord.ButtonStyle.primary)
@@ -41,6 +65,37 @@ class SessionInProgressView(ui.View):
 
         self.add_item(self.next_button)
         self.add_item(self.cancel_button)
+
+        self.previous_results_by_exercise_program_id: dict[str, list[datamodel.Exercise]] = {}
+        self.load_previous_results()
+
+    def format_previous_info(self, exercise_program_id: str) -> str:
+        history = self.previous_results_by_exercise_program_id.get(exercise_program_id, [])
+        if not history:
+            return "*Aucune donnée précédente.*"
+
+        # On limite à x dernières occurrences (les plus récentes à la fin)
+        history = history[-10:]  # derniers, déjà dans l’ordre croissant
+
+        return "\n".join([
+            f"• {e.weight} kg x {e.reps}" for e in history
+        ])
+
+    def load_previous_results(self):
+        bdd = storage.get_storage()
+        user = bdd.get_user_from_user_id(self.user.id)
+
+        sessions = user.sessions
+
+        # On trie les sessions par date (de la plus ancienne à la plus récente)
+        sessions.sort(key=lambda s: datetime.fromisoformat(s.date) if isinstance(s.date, str) else s.date)
+
+
+        for session in sessions:
+            if session.template == self.program:
+                for ex in session.results:
+                    key = ex.exerciseProgram.id
+                    self.previous_results_by_exercise_program_id.setdefault(key, []).append(ex)
 
     def get_button_label(self):
         if self.index >= len(self.program.exercisePrograms):
@@ -101,8 +156,13 @@ class SessionInProgressView(ui.View):
         else:
             # Met à jour le bouton
             self.next_button.label = self.get_button_label()
+
+            ep = self.program.exercisePrograms[self.index]
+            history_text = self.format_previous_info(ep.id)
+
             await interaction.followup.send(
-                f"➡️ Exercice suivant : {self.program.exercisePrograms[self.index].exerciseTemplate.name}",
+                f"➡️ **Exercice suivant** : `{ep.exerciseTemplate.name}`\n"
+                f"📈 **Historique :**\n{history_text}",
                 ephemeral=True,
                 view=self
             )
@@ -130,8 +190,22 @@ async def execute(interaction: discord.Interaction):
 
     async def select_callback(inter: discord.Interaction):
         selected_program = next(p for p in programs if p.name == select.values[0])
-        view = SessionInProgressView(inter.user, selected_program)
-        await inter.response.send_message(f"📋 Programme **{selected_program.name}** sélectionné !", view=view, ephemeral=True)
+
+        # Demander la date de la séance
+        date_modal = DateInputModal()
+        await inter.response.send_modal(date_modal)
+        await date_modal.wait()
+
+        if not date_modal.result_date:
+            return  # L'utilisateur n'a pas soumis ou a entré une date invalide
+
+        # Créer la vue de séance avec la date fournie
+        view = SessionInProgressView(inter.user, selected_program, date_modal.result_date)
+        await inter.followup.send(
+            f"📋 Programme **{selected_program.name}** sélectionné pour le {date_modal.result_date[:10]} !",
+            view=view,
+            ephemeral=True
+        )
 
     select.callback = select_callback
 
