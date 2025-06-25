@@ -43,7 +43,7 @@ class DateInputModal(ui.Modal):
             self.result_date = date_obj.isoformat()
             await response.defer()  # Pas de message visible
         except ValueError:
-            await response.send_message("❌ Format de date invalide. Utilisez JJ/MM/AAAA.", ephemeral=True)
+            await response.send_message("❌ Format de date invalide. Utilisez JJ/MM/AAAA.")
 
         self.stop()
 
@@ -75,11 +75,32 @@ class SessionInProgressView(ui.View):
             return "*Aucune donnée précédente.*"
 
         # On limite à x dernières occurrences (les plus récentes à la fin)
-        history = history[-10:]  # derniers, déjà dans l’ordre croissant
+        x = 10
+        history = history[-x:]  # derniers, déjà dans l’ordre croissant
 
-        return "\n".join([
-            f"• {e.weight} kg x {e.reps}" for e in history
-        ])
+        res = ""
+        for i, e in enumerate(history):
+            if i == 0:
+                res +=  f"• {e.weight} kg x {e.reps}"
+            else:
+                res += "\n"
+                if history[i - 1].weight < e.weight:
+                    progress_weight = ":arrow_upper_right:"
+                elif history[i - 1].weight > e.weight:
+                    progress_weight = ":arrow_lower_right:"
+                else:
+                    progress_weight = ":arrow_right:"
+
+                if history[i - 1].reps < e.reps:
+                    progress_reps = ":arrow_upper_right:"
+                elif history[i - 1].reps > e.reps:
+                    progress_reps = ":arrow_lower_right:"
+                else:
+                    progress_reps = ":arrow_right:"
+
+                res += f"• {e.weight} kg {progress_weight} x {e.reps} {progress_reps}"
+
+        return res
 
     def load_previous_results(self):
         bdd = storage.get_storage()
@@ -92,7 +113,7 @@ class SessionInProgressView(ui.View):
 
 
         for session in sessions:
-            if session.template == self.program:
+            if session.template.id == self.program.id:
                 for ex in session.results:
                     key = ex.exerciseProgram.id
                     self.previous_results_by_exercise_program_id.setdefault(key, []).append(ex)
@@ -101,15 +122,16 @@ class SessionInProgressView(ui.View):
         if self.index >= len(self.program.exercisePrograms):
             return "Terminer la séance"
         ep = self.program.exercisePrograms[self.index]
-        return f"Exercice suivant ({ep.exerciseTemplate.name})"
+        # return f"Exercice suivant ({ep.exerciseTemplate.name})"
+        return f"Enregistrer l'exercice"
 
     async def send_modal(self, interaction: discord.Interaction):
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.", ephemeral=True)
+            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.")
             return
 
         if self.index >= len(self.program.exercisePrograms):
-            await interaction.response.send_message("🎉 Séance terminée.", ephemeral=True)
+            await interaction.response.send_message("🎉 Séance terminée.")
             return
 
         modal = SessionInputModal(self.program.exercisePrograms[self.index])
@@ -150,7 +172,7 @@ class SessionInProgressView(ui.View):
             user = datamodel.User(self.user.id, self.user.mention)
             bdd.upcreate_session_and_add_to_user(user, self.session)
 
-            await interaction.followup.send("📅 Séance enregistrée avec succès !", ephemeral=True)
+            await interaction.followup.send("📅 Séance enregistrée avec succès !")
             self.clear_items()
             self.stop()
         else:
@@ -161,27 +183,33 @@ class SessionInProgressView(ui.View):
             history_text = self.format_previous_info(ep.id)
 
             await interaction.followup.send(
-                f"➡️ **Exercice suivant** : `{ep.exerciseTemplate.name}`\n"
+                f"➡️ **Exercice suivant** : `{ep.exerciseTemplate.name}`\n\n"
                 f"📈 **Historique :**\n{history_text}",
-                ephemeral=True,
                 view=self
             )
 
     async def cancel_session(self, interaction: discord.Interaction):
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.", ephemeral=True)
+            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.")
             return
-        await interaction.response.send_message("❌ Séance annulée.", ephemeral=True)
+        await interaction.response.send_message("❌ Séance annulée.")
         self.clear_items()
         self.stop()
 
+
+    async def on_timeout(self):
+        print("SessionInProgressView timed out")
+        for child in self.children:
+            child.disabled = True
+
+        self.stop()
 
 async def execute(interaction: discord.Interaction):
     bdd = storage.get_storage()
     programs = bdd.get_programs()
 
     if not programs:
-        await interaction.response.send_message("Aucun programme trouvé.", ephemeral=True)
+        await interaction.response.send_message("Aucun programme trouvé.")
         return
 
     # Sélection du programme
@@ -201,17 +229,21 @@ async def execute(interaction: discord.Interaction):
 
         # Créer la vue de séance avec la date fournie
         view = SessionInProgressView(inter.user, selected_program, date_modal.result_date)
+
+        ep = view.program.exercisePrograms[0]
+        history_text = view.format_previous_info(ep.id)
         await inter.followup.send(
-            f"📋 Programme **{selected_program.name}** sélectionné pour le {date_modal.result_date[:10]} !",
-            view=view,
-            ephemeral=True
+            f"📋 Programme **{selected_program.name}** sélectionné pour le {date_modal.result_date[:10]} !\n\n"
+            f"➡️ **Premier exercice** : `{ep.exerciseTemplate.name}`\n"
+            f"📈 **Historique :**\n{history_text}",
+            view=view
         )
 
     select.callback = select_callback
 
     view = ui.View()
     view.add_item(select)
-    await interaction.response.send_message("🫠 Choisissez un programme :", view=view, ephemeral=True)
+    await interaction.response.send_message("🫠 Choisissez un programme :", view=view)
 
 
 class CommandTrainingCreateSession(command.Command):
