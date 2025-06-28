@@ -15,6 +15,7 @@ from command_tictactoe import CommandTicTacToe
 from command_training_create_exercise_template import CommandTrainingCreateExerciseTemplate
 from command_training_create_program_type import CommandTrainingCreateProgram
 from command_training_create_session import CommandTrainingCreateSession
+from command_training_create_session_live import CommandTrainingLiveSession
 
 MY_GUILD = discord.Object(id=1379158112862212167)  # replace with your guild id
 
