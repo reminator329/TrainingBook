@@ -45,7 +45,8 @@ class MyClient(discord.Client):
             CommandTicTacToe(),
             CommandTrainingCreateExerciseTemplate(),
             CommandTrainingCreateProgram(),
-            CommandTrainingCreateSession()
+            CommandTrainingCreateSession(),
+            CommandTrainingLiveSession()
         }
 
         for command in commands:
