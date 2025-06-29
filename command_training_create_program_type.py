@@ -86,8 +86,15 @@ class ProgramBuilderView(ui.View):
         self.select = ExerciseSelect(exercises)
         self.add_item(self.select)
 
-    @ui.button(label="Terminer", style=discord.ButtonStyle.success)
-    async def finish(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        self.finish_button = ui.Button(label="Terminer")
+
+        self.finish_button.style = discord.ButtonStyle.success
+        self.finish_button.callback = self.finish
+
+        self.add_item(self.finish_button)
+
+    async def finish(self, interaction: discord.Interaction):
         response = interaction.response
         assert isinstance(response, discord.InteractionResponse)
 
@@ -150,7 +157,7 @@ async def execute(interaction: discord.Interaction):
         bdd = storage.get_storage()
         bdd.upcreate_program_type_and_add_to_user(user, new_program)
     else:
-        await channel.send("Création annulée ou expirée.", ephemeral=True)
+        await channel.send("Création annulée ou expirée.")
 
 class CommandTrainingCreateProgram(command.Command):
 

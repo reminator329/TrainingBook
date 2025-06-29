@@ -19,7 +19,9 @@ class SessionInputModal(ui.Modal):
         self.add_item(self.reps)
 
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+        response = interaction.response
+        assert isinstance(response, discord.InteractionResponse)
+        await response.defer()
 
 
 class RealTimeSessionView(ui.View):
@@ -34,13 +36,22 @@ class RealTimeSessionView(ui.View):
         self.rest_remaining = 0
         self.x = 10
 
-        self.next_button = ui.Button(label=self.get_button_label(), style=discord.ButtonStyle.primary)
-        self.skip_button = ui.Button(label="Passer le minuteur", style=discord.ButtonStyle.success, disabled=True)
-        self.cancel_button = ui.Button(label="Annuler", style=discord.ButtonStyle.danger)
-
+        self.next_button = ui.Button()
+        self.next_button.label = self.get_button_label()
+        self.next_button.style = discord.ButtonStyle.primary
         self.next_button.callback = self.send_modal
+
+        self.skip_button = ui.Button()
+        self.skip_button.label = "Passer le minuteur"
+        self.skip_button.style = discord.ButtonStyle.success
+        self.skip_button.disabled = True
         self.skip_button.callback = self.skip_rest
+
+        self.cancel_button = ui.Button()
+        self.cancel_button.label="Annuler"
+        self.cancel_button.style = discord.ButtonStyle.danger
         self.cancel_button.callback = self.cancel_session
+
 
         self.add_item(self.next_button)
         self.add_item(self.skip_button)
@@ -52,7 +63,6 @@ class RealTimeSessionView(ui.View):
     def get_button_label(self):
         if self.index >= len(self.program.exercisePrograms):
             return "Terminer la séance"
-        ep = self.program.exercisePrograms[self.index]
         return f"Exercice terminé"
 
     def load_previous_results(self):
@@ -86,16 +96,19 @@ class RealTimeSessionView(ui.View):
         return res
 
     async def send_modal(self, interaction: discord.Interaction):
+        response = interaction.response
+        assert isinstance(response, discord.InteractionResponse)
+
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.")
+            await response.send_message("❌ Ce menu ne vous appartient pas.")
             return
 
         if self.index >= len(self.program.exercisePrograms):
-            await interaction.response.send_message("🎉 Séance terminée.")
+            await response.send_message("🎉 Séance terminée.")
             return
 
         modal = SessionInputModal(self.program.exercisePrograms[self.index])
-        await interaction.response.send_modal(modal)
+        await response.send_modal(modal)
         await modal.wait()
 
         try:
@@ -184,36 +197,45 @@ class RealTimeSessionView(ui.View):
         )
 
     async def cancel_session(self, interaction: discord.Interaction):
+        response = interaction.response
+        assert isinstance(response, discord.InteractionResponse)
+
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.")
+            await response.send_message("❌ Ce menu ne vous appartient pas.")
             return
-        await interaction.response.send_message("❌ Séance annulée.")
+        await response.send_message("❌ Séance annulée.")
         self.clear_items()
         self.stop()
 
 
 async def execute(interaction: discord.Interaction):
+    response = interaction.response
+    assert isinstance(response, discord.InteractionResponse)
+
     bdd = storage.get_storage()
     programs = bdd.get_programs()
 
     if not programs:
-        await interaction.response.send_message("Aucun programme trouvé.")
+        await response.send_message("Aucun programme trouvé.")
         return
 
     options = [discord.SelectOption(label=p.name, value=p.name) for p in programs]
     select = ui.Select(placeholder="Choisissez un programme", options=options)
 
     async def select_callback(inter: discord.Interaction):
+        response_callback = inter.response
+        assert isinstance(response_callback, discord.InteractionResponse)
+
         selected_program = next(p for p in programs if p.name == select.values[0])
-        view = RealTimeSessionView(inter.user, selected_program)
-        await inter.response.defer()
-        await view.send_next_exercise_message(inter)
+        view_callback = RealTimeSessionView(inter.user, selected_program)
+        await response_callback.defer()
+        await view_callback.send_next_exercise_message(inter)
 
     select.callback = select_callback
 
     view = ui.View()
     view.add_item(select)
-    await interaction.response.send_message("🫠 Choisissez un programme :", view=view)
+    await response.send_message("🫠 Choisissez un programme :", view=view)
 
 
 class CommandTrainingLiveSession(command.Command):

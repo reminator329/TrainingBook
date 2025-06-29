@@ -32,8 +32,6 @@ class MyClient(discord.Client):
         # maintain its own tree instead.
         #
 
-
-
         self.tree = app_commands.CommandTree(self)
         commands = {
             CommandHello(),

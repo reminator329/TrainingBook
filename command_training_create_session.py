@@ -57,10 +57,14 @@ class SessionInProgressView(ui.View):
         self.session = datamodel.Session(template=program, date=session_date)
         self.index = 0
 
-        self.next_button = ui.Button(label=self.get_button_label(), style=discord.ButtonStyle.primary)
-        self.cancel_button = ui.Button(label="Annuler", style=discord.ButtonStyle.danger)
-
+        self.next_button = ui.Button()
+        self.next_button.label = self.get_button_label()
+        self.next_button.style = discord.ButtonStyle.primary
         self.next_button.callback = self.send_modal
+
+        self.cancel_button = ui.Button()
+        self.cancel_button.label = "Annuler"
+        self.cancel_button.style = discord.ButtonStyle.danger
         self.cancel_button.callback = self.cancel_session
 
         self.add_item(self.next_button)
@@ -121,21 +125,22 @@ class SessionInProgressView(ui.View):
     def get_button_label(self):
         if self.index >= len(self.program.exercisePrograms):
             return "Terminer la séance"
-        ep = self.program.exercisePrograms[self.index]
-        # return f"Exercice suivant ({ep.exerciseTemplate.name})"
         return f"Enregistrer l'exercice"
 
     async def send_modal(self, interaction: discord.Interaction):
+        response = interaction.response
+        assert isinstance(response, discord.InteractionResponse)
+
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.")
+            await response.send_message("❌ Ce menu ne vous appartient pas.")
             return
 
         if self.index >= len(self.program.exercisePrograms):
-            await interaction.response.send_message("🎉 Séance terminée.")
+            await response.send_message("🎉 Séance terminée.")
             return
 
         modal = SessionInputModal(self.program.exercisePrograms[self.index])
-        await interaction.response.send_modal(modal)
+        await response.send_modal(modal)
         await modal.wait()
 
 
@@ -189,10 +194,13 @@ class SessionInProgressView(ui.View):
             )
 
     async def cancel_session(self, interaction: discord.Interaction):
+        response = interaction.response
+        assert isinstance(response, discord.InteractionResponse)
+
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Ce menu ne vous appartient pas.")
+            await response.send_message("❌ Ce menu ne vous appartient pas.")
             return
-        await interaction.response.send_message("❌ Séance annulée.")
+        await response.send_message("❌ Séance annulée.")
         self.clear_items()
         self.stop()
 
@@ -205,11 +213,14 @@ class SessionInProgressView(ui.View):
         self.stop()
 
 async def execute(interaction: discord.Interaction):
+    response = interaction.response
+    assert isinstance(response, discord.InteractionResponse)
+
     bdd = storage.get_storage()
     programs = bdd.get_programs()
 
     if not programs:
-        await interaction.response.send_message("Aucun programme trouvé.")
+        await response.send_message("Aucun programme trouvé.")
         return
 
     # Sélection du programme
@@ -217,33 +228,35 @@ async def execute(interaction: discord.Interaction):
     select = ui.Select(placeholder="Choisissez un programme", options=options)
 
     async def select_callback(inter: discord.Interaction):
+        response_callback = inter.response
+        assert isinstance(response_callback, discord.InteractionResponse)
         selected_program = next(p for p in programs if p.name == select.values[0])
 
         # Demander la date de la séance
         date_modal = DateInputModal()
-        await inter.response.send_modal(date_modal)
+        await response_callback.send_modal(date_modal)
         await date_modal.wait()
 
         if not date_modal.result_date:
             return  # L'utilisateur n'a pas soumis ou a entré une date invalide
 
         # Créer la vue de séance avec la date fournie
-        view = SessionInProgressView(inter.user, selected_program, date_modal.result_date)
+        session_view = SessionInProgressView(inter.user, selected_program, date_modal.result_date)
 
-        ep = view.program.exercisePrograms[0]
-        history_text = view.format_previous_info(ep.id)
+        ep = session_view.program.exercisePrograms[0]
+        history_text = session_view.format_previous_info(ep.id)
         await inter.followup.send(
             f"📋 Programme **{selected_program.name}** sélectionné pour le {date_modal.result_date[:10]} !\n\n"
             f"➡️ **Premier exercice** : `{ep.exerciseTemplate.name}`\n"
             f"📈 **Historique :**\n{history_text}",
-            view=view
+            view=session_view
         )
 
     select.callback = select_callback
 
     view = ui.View()
     view.add_item(select)
-    await interaction.response.send_message("🫠 Choisissez un programme :", view=view)
+    await response.send_message("🫠 Choisissez un programme :", view=view)
 
 
 class CommandTrainingCreateSession(command.Command):
